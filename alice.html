@@ -1,0 +1,134 @@
+<html>
+	<style>
+	canvas {
+	    image-rendering: optimizeSpeed;
+	    image-rendering: -moz-crisp-edges;
+	    image-rendering: -webkit-optimize-contrast;
+	    image-rendering: -o-crisp-edges;
+	    image-rendering: crisp-edges;
+	    -ms-interpolation-mode: nearest-neighbor;
+	}
+	</style>
+<body>
+	<canvas id="canvas" width="638" height="694"></canvas>
+	<br>
+	<input id="blocks" type="text" value="100">
+	<script>
+	var ctx = canvas.getContext('2d'),
+	img = new Image(),
+	play = false;
+
+	ctx.mozImageSmoothingEnabled = false;
+	ctx.imageSmoothingEnabled = false;
+
+	img.onload = pixelate;
+
+	img.src = 'Alice9b.png';
+
+	var allowedColors = {
+		hair : [255, 217, 57],
+		clothes : [37, 141, 191],
+		skin : [253, 209, 153],
+		white : [255, 255, 255],
+		black : [0, 0, 0],
+
+	};
+	var transformedColors = {
+		tiara : {
+			from : [101, 25, 15],
+			to : allowedColors.black
+		},
+		shadow : {
+			from : [40, 22, 111],
+			to : allowedColors.black
+		},
+		lips : {
+			from : [249, 104, 110],
+			to : allowedColors.black
+		},
+		tongue : {
+			from : [243, 149, 186],
+			to : allowedColors.black
+		},
+		eyes : {
+			from : [1, 137, 180],
+			to : allowedColors.clothes
+		}
+	};
+
+	function getColor(red, green, blue) {
+		for (var colorName in allowedColors) {
+			var color = allowedColors[colorName];
+			if (red == color[0] && green == color[1] && blue == color[2]) {
+				return color;
+			}
+		}
+		for (var colorName in transformedColors) {
+			var color = transformedColors[colorName];
+			if (red == color.from[0] && green == color.from[1] && blue == color.from[2]) {
+				return color.to;
+			}
+		}
+		return allowedColors.black;
+	};
+
+	function drawLine(x, y, c, maxX, maxY) {
+		ctx.lineWidth = c % 10 === 0 ? 1 : 0.5;
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		ctx.lineTo(maxX, maxY);
+		ctx.stroke();
+	};
+
+	function drawGrid(inc) {
+		for (var i = 0, c = 0; i < canvas.width; i += inc, c++) {
+			drawLine(i, 0, c, i, canvas.height);
+		}
+		for (var i = 0, c = 0; i < canvas.height; i += inc, c++) {
+			drawLine(0, i, c, canvas.width, i);
+		}
+	};
+
+	function pixelate2(pixelSize) {
+		/*ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+		ctx.fillStyle = "white";*/
+		var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		var data = imgData.data;
+
+		for (var y = 0; y < canvas.height; ++y) {
+			for (var x = 0; x < canvas.width; ++x) {
+				var i = (y * canvas.width + x) * 4;
+				var red = data[i],
+					green = data[i + 1],
+					blue = data[i + 2],
+					alpha = data[i + 3];
+
+				var newColor = getColor(red, green, blue);
+				data[i] = newColor[0];
+				data[i + 1] = newColor[1];
+				data[i + 2] = newColor[2];
+				data[i + 3] = 255;
+			}
+		}
+		ctx.putImageData(imgData, 0, 0);
+	}
+
+	function pixelate() {
+		var w = blocks.value,
+			h = canvas.height * w / canvas.width;
+
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.drawImage(img, 0, 0, w, h);
+		ctx.fillStyle = "white";
+		ctx.drawImage(canvas, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
+		pixelate2(canvas.width / w);
+
+		drawGrid(canvas.width / w);
+	}
+
+
+	blocks.addEventListener('change', pixelate, false);
+	</script>
+</body>
+</html>
